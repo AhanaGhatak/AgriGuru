@@ -24,7 +24,7 @@ def _(text):
     if target_lang == "en":
         return text
     try:
-        return LibreTranslateTranslator(source='en', target=target_lang).translate(text)
+        return GoogleTranslator(source='en', target=target_lang).translate(text)
     except:
         return text
 
