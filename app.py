@@ -104,13 +104,12 @@ st.divider()
 
 # ---------------- USER INPUT FOR ML ----------------
 st.markdown(_("### 📥 Enter Soil and Climate Data (for ML Prediction)"))
-n = st.number_input(_("Nitrogen"), min_value=0.0)
-p = st.number_input(_("Phosphorous"), min_value=0.0)
-k = st.number_input(_("Potassium"), min_value=0.0)
-temp = st.number_input(_("Temparature (°C)"), min_value=0.0)
-humidity = st.number_input(_("Humidity (%)"), min_value=0.0)
-moisture = st.number_input(_("Moisture (%)"), min_value=0.0)
-
+n = st.number_input(_("Nitrogen"), min_value=0.0, key="n_input")
+p = st.number_input(_("Phosphorous"), min_value=0.0, key="p_input")
+k = st.number_input(_("Potassium"), min_value=0.0, key="k_input")
+temp = st.number_input(_("Temparature (°C)"), min_value=0.0, key="temp_input")
+humidity = st.number_input(_("Humidity (%)"), min_value=0.0, key="humidity_input")
+moisture = st.number_input(_("Moisture (%)"), min_value=0.0, key="moisture_input")
 # ---------------- ML MODEL: FILTERED BY DISTRICT CROPS ----------------
 st.subheader(_("🌿 ML-Powered Crop Recommendation (Filtered by District)"))
 
