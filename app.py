@@ -181,7 +181,7 @@ try:
         if recommended:
             st.success(_("✅ Top Recommended Crops Grown in Your District:"))
             for crop, score in recommended:
-                st.write(f"🌿 **{_(crop)}**)
+                st.write(f"🌿 **{_(crop)— {_('Confidence')}: {score:.2f}"}**)
         else:
             st.warning(_("❌ No matching crops from prediction found in this district."))
 except FileNotFoundError:
