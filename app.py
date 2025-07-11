@@ -106,7 +106,14 @@ soil = st.selectbox(t["select_soil"], soils[language])
 
 def recommend_crops(season, soil):
     if season in ["Kharif", "खरीफ", "খরিফ", "கரிஃப்"] and soil in ["Alluvial", "जलोढ़", "পলিমাটি", "ஆலுவியல்"]:
-        return ["Paddy", "Maize", "Jute"]
+       if season=="Kharif" and soil=="Alluvial":
+           return ["Paddy", "Maize", "Jute"]
+       elif season=="खरीफ" and soil=="जलोढ़":
+           return ["धान", "मक्का", मक्का"]
+       elif season=="খরিফ" and soil=="পলিমাটি": 
+           return["ধান","ভুট্টা","পাট"]
+       elif season=="கரிஃப்" and soil=="ஆலுவியல்": 
+           return["நெல்", "சோளம்", "சணல்"]
     elif season in ["Rabi", "रबी", "রবি", "ரபி"] and soil in ["Black", "काली", "কালো", "கருப்பு"]:
         return ["Wheat", "Barley", "Gram"]
     elif season in ["Zaid", "जायद", "জায়দ", "சாயித்"]:
