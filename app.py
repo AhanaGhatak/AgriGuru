@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 
 # Set page config
-st.set_page_config(page_title="AgriGuru Lite", layout="centered")
+st.set_page_config(page_title="AgriGuru Lite")
 
 # 🌐 Language selector first
 language = st.selectbox("🌐 Select Language / भाषा चुनें", ["English", "Hindi", "Bengali", "Tamil"])
