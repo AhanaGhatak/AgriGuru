@@ -14,10 +14,13 @@ languages = {
     "Tamil": "ta"
 }
 
+st.set_page_config(page_title="AgriGuru Lite", layout="centered")
+
+# 🌐 Language selection in sidebar
 selected_lang = st.sidebar.selectbox("🌐 Select Language", list(languages.keys()))
 target_lang = languages[selected_lang]
 
-# Translate helper function
+# Translation function
 def _(text):
     if target_lang == "en":
         return text
@@ -26,8 +29,6 @@ def _(text):
     except:
         return text
 
-# ---------------- UI SETUP ----------------
-st.set_page_config(page_title="AgriGuru Lite", layout="centered")
 st.title(_("🌾 AgriGuru Lite – Smart Farming Assistant"))
 
 # ---------------- LOAD PRODUCTION DATA ----------------
@@ -37,16 +38,12 @@ def load_production_data():
 
 try:
     prod_df = load_production_data()
-    state_options = prod_df["State_Name"].dropna().unique()
-    state_filter = st.selectbox(_("🌍 Select State"), state_options)
 
-    district_options = prod_df[prod_df["State_Name"] == state_filter]["District_Name"].dropna().unique()
-    district_filter = st.selectbox(_("🏜️ Select District"), district_options)
+    state_filter = st.selectbox(_("🌍 Select State"), prod_df["State_Name"].dropna().unique())
+    district_filter = st.selectbox(_("🏞️ Select District"), prod_df[prod_df["State_Name"] == state_filter]["District_Name"].dropna().unique())
+    season_filter = st.selectbox(_("🗓️ Select Season"), prod_df["Season"].dropna().unique())
 
-    season_options = prod_df["Season"].dropna().unique()
-    season_filter = st.selectbox(_("🗓️ Select Season"), season_options)
-
-    st.markdown(f"### 📍 {_('Selected Region')}: **{district_filter}, {state_filter}** | {_('Season')}: **{season_filter}**")
+    st.markdown(_(f"### 📍 Selected Region: **{district_filter}, {state_filter}** | Season: **{season_filter}**"))
 except FileNotFoundError:
     st.warning(_("Please upload `crop_production.csv`."))
 
@@ -71,17 +68,17 @@ def get_weather(city):
         return res.json()['list'][:5]
     return None
 
-if district_filter:
+if 'district_filter' in locals():
     city_query = district_to_city.get(district_filter.upper(), district_filter)
     forecast = get_weather(city_query)
     if forecast:
         for day in forecast:
-            st.write(f"{day['dt_txt']} | 🌡️ {day['main']['temp']} °C | {_(day['weather'][0]['description'])}")
+            st.write(f"{day['dt_txt']} | 🌡️ {day['main']['temp']}°C | {_(day['weather'][0]['description'])}")
     else:
-        st.warning(_("Weather unavailable. Try entering a nearby city manually."))
+        st.warning(_("⚠️ Weather unavailable. Try entering a nearby city manually."))
 
 # ---------------- SOIL TYPE BUTTONS ----------------
-st.subheader(_("🥱 Explore Suitable Crops by Soil Type"))
+st.subheader(_("🧱 Explore Suitable Crops by Soil Type"))
 
 soil_crop_map = {
     "Alluvial": ["Rice", "Sugarcane", "Wheat", "Jute"],
@@ -93,18 +90,20 @@ soil_crop_map = {
     "Loamy": ["Maize", "Barley", "Sugarcane"]
 }
 
-cols = st.columns(3)
+soil_cols = st.columns(3)
 soil_types = list(soil_crop_map.keys())
-for i, soil in enumerate(soil_types):
-    with cols[i % 3]:
-        if st.button(_(soil)):
-            crops = ", ".join([_(crop) for crop in soil_crop_map[soil]])
-            st.info(_("🌾 Suitable Crops: ") + crops)
+for i in range(0, len(soil_types), 3):
+    cols = st.columns(3)
+    for j in range(3):
+        if i + j < len(soil_types):
+            with cols[j]:
+                if st.button(_(soil_types[i + j])):
+                    st.info("🌾 " + _(f"Suitable Crops: {', '.join(soil_crop_map[soil_types[i + j]])}"))
 
 st.divider()
 
 # ---------------- USER INPUT FOR ML ----------------
-st.markdown("### 📥 " + _("Enter Soil and Climate Data (for ML Prediction)"))
+st.markdown(_("### 📥 Enter Soil and Climate Data (for ML Prediction)"))
 n = st.number_input(_("Nitrogen"), min_value=0.0)
 p = st.number_input(_("Phosphorous"), min_value=0.0)
 k = st.number_input(_("Potassium"), min_value=0.0)
@@ -152,6 +151,6 @@ try:
             for crop, score in recommended:
                 st.write(f"🌱 **{_(crop)}** – {_('Confidence')}: {score:.2f}")
         else:
-            st.warning(_("No matching crops from prediction found in this district."))
+            st.warning(_("❌ No matching crops from prediction found in this district."))
 except FileNotFoundError:
     st.warning(_("Please upload `data_core.csv`."))
