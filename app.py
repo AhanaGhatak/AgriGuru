@@ -109,7 +109,7 @@ def recommend_crops(season, soil):
        if season=="Kharif" and soil=="Alluvial":
            return ["Paddy", "Maize", "Jute"]
        elif season=="खरीफ" and soil=="जलोढ़":
-           return ["धान", "मक्का", मक्का"]
+           return ["धान", "मक्का", "जूट"]
        elif season=="খরিফ" and soil=="পলিমাটি": 
            return["ধান","ভুট্টা","পাট"]
        elif season=="கரிஃப்" and soil=="ஆலுவியல்": 
