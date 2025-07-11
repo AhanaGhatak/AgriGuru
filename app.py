@@ -2,7 +2,8 @@ import streamlit as st
 import requests
 
 # Set page config
-st.set_page_config(page_title="AgriGuru Lite")
+st.set_page_config(page_title="AgriGuru Multilingual", layout="centered")
+
 
 # 🌐 Language selector first
 language = st.selectbox("🌐 Select Language / भाषा चुनें", ["English", "Hindi", "Bengali", "Tamil"])
@@ -116,5 +117,3 @@ def recommend_crops(season, soil):
 if season and soil:
     crops = recommend_crops(season, soil)
     st.success(t["recommendation"] + ": " + ", ".join(crops))
-
-
