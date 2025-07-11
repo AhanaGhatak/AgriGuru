@@ -15,7 +15,15 @@ languages = {
 }
 
 st.set_page_config(page_title="AgriGuru Lite", layout="wide")
-st.markdown("<style> .stButton button { width: 100%; } </style>", unsafe_allow_html=True)
+st.markdown("""
+    <style>
+    .stButton button { width: 100%; border-radius: 10px; font-weight: bold; }
+    .stSelectbox > div { border-radius: 10px; }
+    .block-container { padding-top: 2rem; }
+    .css-18e3th9 { background: linear-gradient(to right, #dce35b, #45b649); padding: 1rem; border-radius: 12px; }
+    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 { color: #2f4f4f; }
+    </style>
+""", unsafe_allow_html=True)
 
 # Sidebar: Language selection
 st.sidebar.image("https://cdn-icons-png.flaticon.com/512/606/606807.png", width=80)
@@ -23,7 +31,7 @@ st.sidebar.title("🌐 Language Settings")
 selected_lang = st.sidebar.selectbox("Select Language", list(languages.keys()))
 target_lang = languages[selected_lang]
 
-# Caching translations
+# Translation with caching
 translator_cache = {}
 def _(text):
     if target_lang == "en":
@@ -38,8 +46,8 @@ def _(text):
         return text
 
 # ---------------- HEADER ----------------
-st.markdown(f"<h1 style='text-align: center;'>{_('🌾 AgriGuru Lite – Smart Farming Assistant')}</h1>", unsafe_allow_html=True)
-st.markdown("---")
+st.markdown(f"<h1 style='text-align: center; color: #006400;'>{_('🌾 AgriGuru Lite – Smart Farming Assistant')}</h1>", unsafe_allow_html=True)
+st.markdown("<hr style='border: 2px solid #228B22;'>", unsafe_allow_html=True)
 
 # ---------------- LOAD PRODUCTION DATA ----------------
 @st.cache_data
@@ -67,7 +75,7 @@ try:
         selected_season_display = st.selectbox(_("🗓 Select Season"), season_display)
         selected_season = seasons[season_display.index(selected_season_display)]
 
-    st.markdown(f"#### 📍 {_('Selected Region')}: **{selected_district}, {selected_state}** | {_('Season')}: **{selected_season}**")
+    st.markdown(f"<h4 style='color:#2E8B57;'>📍 {_('Selected Region')}: <b>{selected_district}, {selected_state}</b> | {_('Season')}: <b>{selected_season}</b></h4>", unsafe_allow_html=True)
 except FileNotFoundError:
     st.warning(_("⚠ Please upload crop_production.csv."))
 
@@ -91,11 +99,11 @@ if 'selected_district' in locals():
     forecast = get_weather(district_en)
     if forecast:
         for day in forecast:
-            st.write(f"📅 {day['dt_txt']} | 🌡 {day['main']['temp']}°C | ☁ {_(day['weather'][0]['description'])}")
+            st.info(f"📅 {day['dt_txt']} | 🌡 {day['main']['temp']}°C | ☁ {_(day['weather'][0]['description'])}")
     else:
         st.warning(_("⚠ Weather unavailable. Try a nearby city."))
 
-st.markdown("---")
+st.markdown("<hr>", unsafe_allow_html=True)
 
 # ---------------- SUITABLE CROPS BY SOIL TYPE ----------------
 st.markdown(f"### 🧱 { _('Explore Suitable Crops by Soil Type') }")
@@ -112,15 +120,13 @@ soil_crop_map = {
 
 soil_display_map = {_(s): s for s in soil_crop_map}
 soil_cols = st.columns(3)
-i = 0
-for translated_soil in soil_display_map:
+for i, translated_soil in enumerate(soil_display_map):
     with soil_cols[i % 3]:
         if st.button(translated_soil, key=f"soil_{translated_soil}"):
             crops = [_(c) for c in soil_crop_map[soil_display_map[translated_soil]]]
-            st.info("🌾 " + _(f"Suitable Crops: {', '.join(crops)}"))
-    i += 1
+            st.success("🌾 " + _(f"Suitable Crops: {', '.join(crops)}"))
 
-st.markdown("---")
+st.markdown("<hr>", unsafe_allow_html=True)
 
 # ---------------- USER INPUT FOR ML ----------------
 st.markdown(f"### 📊 { _('Enter Soil and Climate Data (for ML Prediction)') }")
@@ -180,5 +186,6 @@ try:
             st.warning(_("❌ No matching crops from prediction found in this district."))
 except FileNotFoundError:
     st.warning(_("⚠ Please upload data_core.csv."))
+
 
 
