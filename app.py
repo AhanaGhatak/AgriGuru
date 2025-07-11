@@ -33,6 +33,13 @@ st.title(_("🌾 AgriGuru Lite – Smart Farming Assistant"))
 # ---------------- WEATHER FORECAST ----------------
 st.subheader(_("🌦️ 5-Day Weather Forecast"))
 api_key = "0a16832edf4445ce698396f2fa890ddd"
+location = st.text_input(_("Enter your City/District (for weather)"))
+def get_weather(city):
+    url = f"http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={api_key}&units=metric"
+    res = requests.get(url)
+    if res.status_code == 200:
+        return res.json()['list'][:5]
+    return None
 
 if location:
     # Translate location to English for API call
@@ -42,16 +49,6 @@ if location:
         location_en = location  # fallback if translation fails
 
     forecast = get_weather(location_en)
-
-def get_weather(city):
-    url = f"http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={api_key}&units=metric"
-    res = requests.get(url)
-    if res.status_code == 200:
-        return res.json()['list'][:5]
-    return None
-
-if location:
-    forecast = get_weather(location)
     if forecast:
         for day in forecast:
             st.write(f"{day['dt_txt']} | 🌡️ {day['main']['temp']}°C | {_(day['weather'][0]['description'])}")
