@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import requests
 from sklearn.ensemble import RandomForestClassifier
-from deep_translator import LibreTranslateTranslator
+from deep_translator import GoogleTranslator
 
 # Language translation setup
 languages = {
