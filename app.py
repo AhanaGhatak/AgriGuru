@@ -1,126 +1,118 @@
-import streamlit as st
+import streamlit as st 
+import pandas as pd
 import requests
+from sklearn.ensemble import RandomForestClassifier
+from deep_translator import LibreTranslateTranslator
 
-# Set page config
-st.set_page_config(page_title="AgriGuru Multilingual", layout="centered")
-
-
-# 🌐 Language selector first
-language = st.selectbox("🌐 Select Language / भाषा चुनें", ["English", "Hindi", "Bengali", "Tamil"])
-texts = {
-    "English": {
-        "title": "🌾 AgriGuru – Smart Farming Assistant",
-        "weather_title": "🌦️ Weather Forecast",
-        "enter_city": "Enter your District/City",
-        "fetch_error": "Could not fetch weather. Please check the name.",
-        "crop_title": "🧠 Rule-Based Crop Recommendation",
-        "select_season": "Select Crop Season",
-        "select_soil": "Select Soil Type",
-        "recommendation": "Recommended Crops"
-    },
-    "Hindi": {
-        "title": "🌾 AgriGuru – स्मार्ट खेती सहायक",
-        "weather_title": "🌦️ मौसम पूर्वानुमान",
-        "enter_city": "अपना जिला/शहर दर्ज करें",
-        "fetch_error": "मौसम डेटा प्राप्त नहीं हो सका। कृपया नाम जांचें।",
-        "crop_title": "🧠 नियम आधारित फसल सिफारिश",
-        "select_season": "फसल का मौसम चुनें",
-        "select_soil": "मिट्टी का प्रकार चुनें",
-        "recommendation": "अनुशंसित फसलें"
-    },
-    "Bengali": {
-        "title": "🌾 AgriGuru – স্মার্ট কৃষি সহকারী",
-        "weather_title": "🌦️ আবহাওয়ার পূর্বাভাস",
-        "enter_city": "আপনার জেলা/শহরের নাম লিখুন",
-        "fetch_error": "আবহাওয়া পাওয়া যায়নি। নাম চেক করুন।",
-        "crop_title": "🧠 নিয়মভিত্তিক ফসল সুপারিশ",
-        "select_season": "ফসলের ঋতু নির্বাচন করুন",
-        "select_soil": "মাটির ধরন নির্বাচন করুন",
-        "recommendation": "সুপারিশকৃত ফসল"
-    },
-    "Tamil": {
-        "title": "🌾 AgriGuru – ஸ்மார்ட் விவசாய உதவியாளர்",
-        "weather_title": "🌦️ வானிலை முன்னறிவு",
-        "enter_city": "உங்கள் மாவட்டம்/நகரத்தை உள்ளிடவும்",
-        "fetch_error": "வானிலை பெற முடியவில்லை. நகரப்பெயரை சரிபார்க்கவும்.",
-        "crop_title": "🧠 விதிமுறை அடிப்படையிலான பயிர் பரிந்துரை",
-        "select_season": "பயிர் பருவத்தை தேர்வு செய்க",
-        "select_soil": "மண்ணின் வகையை தேர்வு செய்க",
-        "recommendation": "பரிந்துரைக்கப்பட்ட பயிர்கள்"
-    }
+# Language translation setup
+languages = {
+    "English": "en",
+    "Hindi": "hi",
+    "Bengali": "bn",
+    "Marathi": "mr",
+    "Tamil": "ta"
 }
 
-t = texts[language] 
-t = texts[language]
-st.subheader(t["weather_title"])
+st.set_page_config(page_title="AgriGuru Lite", layout="centered")
 
-# 🔑 Insert your OpenWeatherMap API Key here
-api_key = "0a16832edf4445ce698396f2fa890ddd"  # <-- 🔴 REPLACE THIS
+# 🌐 Language selection
+selected_lang = st.selectbox("🌐 Select Language", list(languages.keys()))
+target_lang = languages[selected_lang]
 
-city = st.text_input(t["enter_city"])
-
-def get_weather(city_name):
+# Translation function
+def _(text):
+    if target_lang == "en":
+        return text
     try:
-        url = f"http://api.openweathermap.org/data/2.5/forecast?q={city_name},IN&appid={api_key}&units=metric"
-        res = requests.get(url)
-        if res.status_code == 200:
-            data = res.json()
-            return data['list'][:5]  # Return 5 records (approx 5-day forecast)
-        else:
-            return None
-    except Exception as e:
-        return None
+        return LibreTranslateTranslator(source='en', target=target_lang).translate(text)
+    except:
+        return text
 
-if city:
-    weather_data = get_weather(city)
-    if weather_data:
-        for entry in weather_data:
-            date = entry['dt_txt']
-            temp = entry['main']['temp']
-            desc = entry['weather'][0]['description'].capitalize()
-            st.write(f"{date} | 🌡️ {temp}°C | {desc}")
+st.title(_("🌾 AgriGuru Lite – Smart Farming Assistant"))
+
+# ---------------- WEATHER FORECAST ----------------
+st.subheader(_("🌦️ 5-Day Weather Forecast"))
+api_key = "0a16832edf4445ce698396f2fa890ddd"
+
+location = st.text_input(_("Enter your City/District (for weather)"))
+
+def get_weather(city):
+    url = f"http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={api_key}&units=metric"
+    res = requests.get(url)
+    if res.status_code == 200:
+        return res.json()['list'][:5]
+    return None
+
+if location:
+    forecast = get_weather(location)
+    if forecast:
+        for day in forecast:
+            st.write(f"{day['dt_txt']} | 🌡️ {day['main']['temp']}°C | {_(day['weather'][0]['description'])}")
     else:
-        st.warning(t["fetch_error"])
+        st.warning(_("Couldn't fetch weather. Please check the city name."))
 
+# ---------------- RULE-BASED CROP RECOMMENDATION ----------------
+st.subheader(_("🧠 Rule-Based Crop Recommendation"))
 
-
-
-# ---------- Rule-Based Crop Recommendation ----------
-st.subheader(t["crop_title"])
-
-seasons = {
-    "English": ["Kharif", "Rabi", "Zaid"],
-    "Hindi": ["खरीफ", "रबी", "जायद"],
-    "Bengali": ["খরিফ", "রবি", "জায়দ"],
-    "Tamil": ["கரிஃப்", "ரபி", "சாயித்"]
-}
-soils = {
-    "English": ["Alluvial", "Black", "Red", "Laterite", "Sandy", "Clayey"],
-    "Hindi": ["जलोढ़", "काली", "लाल", "लेटेराइट", "बलुई", "मिट्टीदार"],
-    "Bengali": ["পলিমাটি", "কালো", "লাল", "ল্যাটেরাইট", "বেলে", "কাদাযুক্ত"],
-    "Tamil": ["ஆலுவியல்", "கருப்பு", "சிவப்பு", "லேட்டரைட்", "மணல்", "களிமண்"]
-}
-
-season = st.selectbox(t["select_season"], seasons[language])
-soil = st.selectbox(t["select_soil"], soils[language])
+season = st.selectbox(_("Select the Crop Season"), ["Kharif", "Rabi", "Zaid"])
+soil = st.selectbox(_("Select Soil Type"), ["Alluvial", "Black", "Red", "Laterite", "Sandy", "Clayey"])
 
 def recommend_crops(season, soil):
-    if season in ["Kharif", "खरीफ", "খরিফ", "கரிஃப்"] and soil in ["Alluvial", "जलोढ़", "পলিমাটি", "ஆலுவியல்"]:
-       if season=="Kharif" and soil=="Alluvial":
-           return ["Paddy", "Maize", "Jute"]
-       elif season=="खरीफ" and soil=="जलोढ़":
-           return ["धान", "मक्का", "जूट"]
-       elif season=="খরিফ" and soil=="পলিমাটি": 
-           return["ধান","ভুট্টা","পাট"]
-       elif season=="கரிஃப்" and soil=="ஆலுவியல்": 
-           return["நெல்", "சோளம்", "சணல்"]
-    elif season in ["Rabi", "रबी", "রবি", "ரபி"] and soil in ["Black", "काली", "কালো", "கருப்பு"]:
+    if season == "Kharif" and soil == "Alluvial":
+        return ["Paddy", "Maize", "Jute"]
+    elif season == "Rabi" and soil == "Black":
         return ["Wheat", "Barley", "Gram"]
-    elif season in ["Zaid", "जायद", "জায়দ", "சாயித்"]:
+    elif season == "Zaid":
         return ["Watermelon", "Cucumber", "Bitter Gourd"]
     else:
         return ["Millets", "Pulses", "Sunflower"]
 
 if season and soil:
-    crops = recommend_crops(season, soil)
-    st.success(t["recommendation"] + ": " + ", ".join(crops))
+    rule_based = recommend_crops(season, soil)
+    st.success(_("Recommended Crops: ") + ", ".join(rule_based))
+
+# ---------------- ML-BASED CROP RECOMMENDATION ----------------
+st.subheader(_("🤖 ML-Based Crop Recommendation (via CSV + Random Forest)"))
+
+@st.cache_data
+def load_crop_data():
+    return pd.read_csv("Crop_recommendation.csv")
+
+df = load_crop_data()
+
+X = df.drop("label", axis=1)
+y = df["label"]
+
+model = RandomForestClassifier()
+model.fit(X, y)
+
+# Crop-to-Season Mapping
+crop_seasons = {
+    "rice": "Kharif", "maize": "Kharif", "jute": "Kharif", "cotton": "Kharif",
+    "kidneybeans": "Kharif", "pigeonpeas": "Kharif", "blackgram": "Kharif", 
+    "mothbeans": "Kharif", "mungbean": "Kharif",
+
+    "wheat": "Rabi", "gram": "Rabi", "lentil": "Rabi", "chickpea": "Rabi",
+    "grapes": "Rabi", "apple": "Rabi", "orange": "Rabi", "pomegranate": "Rabi",
+
+    "watermelon": "Zaid", "muskmelon": "Zaid", "cucumber": "Zaid",
+
+    "banana": "All Season", "mango": "All Season", "papaya": "All Season",
+    "coconut": "All Season", "coffee": "All Season"
+}
+
+st.markdown(_("*Enter Soil and Climate Data for ML Prediction*"))
+n = st.number_input(_("Nitrogen (N)"), min_value=0.0)
+p = st.number_input(_("Phosphorus (P)"), min_value=0.0)
+k = st.number_input(_("Potassium (K)"), min_value=0.0)
+temp = st.number_input(_("Temperature (°C)"), min_value=0.0)
+humidity = st.number_input(_("Humidity (%)"), min_value=0.0)
+ph = st.number_input(_("Soil pH"), min_value=0.0)
+rainfall = st.number_input(_("Rainfall (mm)"), min_value=0.0)
+
+if st.button(_("Predict Best Crop")):
+    input_data = [[n, p, k, temp, humidity, ph, rainfall]]
+    prediction = model.predict(input_data)
+    predicted_crop = prediction[0]
+    season = crop_seasons.get(predicted_crop, "Unknown")
+    st.success(f"🌱 { _('Predicted Crop') }: *{predicted_crop}* ({ _(season) } {_('season')})")
