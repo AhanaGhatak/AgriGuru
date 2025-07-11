@@ -2,38 +2,47 @@ import streamlit as st
 import pandas as pd
 import requests
 from sklearn.ensemble import RandomForestClassifier
-from googletrans import Translator
+from transformers import MarianMTModel, MarianTokenizer
 
+# Set Streamlit page config
 st.set_page_config(page_title="AgriGuru Lite", layout="centered")
+st.title("🌾 AgriGuru Lite – Smart Farming Assistant")
 
-# Translator
-translator = Translator()
-
-# Supported languages (for drop-down menu)
+# -------- LANGUAGE TRANSLATION SETUP --------
 language_map = {
     "English": "en", "Hindi": "hi", "Bengali": "bn", "Tamil": "ta",
     "Telugu": "te", "Marathi": "mr", "Gujarati": "gu", "Punjabi": "pa"
 }
 
-# Language selector
-selected_language = st.selectbox("🌐 Choose Language", list(language_map.keys()))
-lang_code = language_map[selected_language]
+src_lang = "en"
+target_lang_name = st.selectbox("🌐 Choose Language", list(language_map.keys()))
+target_lang = language_map[target_lang_name]
 
-# Translator helper
-def _(text):
+# Translation function
+@st.cache_resource
+def load_translation_model(src='en', tgt='hi'):
+    model_name = f"Helsinki-NLP/opus-mt-{src}-{tgt}"
+    tokenizer = MarianTokenizer.from_pretrained(model_name)
+    model = MarianMTModel.from_pretrained(model_name)
+    return tokenizer, model
+
+def translate_text(text, tgt):
+    if tgt == "en":
+        return text  # No translation
     try:
-        if lang_code != "en":
-            return translator.translate(text, dest=lang_code).text
-        else:
-            return text
+        tokenizer, model = load_translation_model('en', tgt)
+        inputs = tokenizer(text, return_tensors="pt", padding=True)
+        translated = model.generate(**inputs)
+        return tokenizer.decode(translated[0], skip_special_tokens=True)
     except:
-        return text  # fallback if translation fails
+        return text  # fallback
 
-st.title(_("🌾 AgriGuru Lite – Smart Farming Assistant"))
+def _(text):
+    return translate_text(text, target_lang)
 
-# ---------------- WEATHER FORECAST ----------------
+# -------- WEATHER FORECAST --------
 st.subheader(_("🌦️ 5-Day Weather Forecast"))
-api_key = "0a16832edf4445ce698396f2fa890ddd"
+api_key = "0a16832edf4445ce698396f2fa890ddd"  # Replace with your OpenWeatherMap API Key
 
 location = st.text_input(_("Enter your City/District (for weather)"))
 
@@ -52,7 +61,7 @@ if location:
     else:
         st.warning(_("Couldn't fetch weather. Please check the city name."))
 
-# ---------------- RULE-BASED CROP RECOMMENDATION ----------------
+# -------- RULE-BASED CROP RECOMMENDATION --------
 st.subheader(_("🧠 Rule-Based Crop Recommendation"))
 
 season = st.selectbox(_("Select the Crop Season"), ["Kharif", "Rabi", "Zaid"])
@@ -72,7 +81,7 @@ if season and soil:
     rule_based = recommend_crops(season, soil)
     st.success(_("Recommended Crops: ") + ", ".join(rule_based))
 
-# ---------------- ML-BASED CROP RECOMMENDATION ----------------
+# -------- ML-BASED CROP RECOMMENDATION --------
 st.subheader(_("🤖 ML-Based Crop Recommendation (via CSV + Random Forest)"))
 
 @st.cache_data
@@ -80,6 +89,7 @@ def load_crop_data():
     return pd.read_csv("Crop_recommendation.csv")
 
 df = load_crop_data()
+
 X = df.drop("label", axis=1)
 y = df["label"]
 
@@ -98,7 +108,6 @@ crop_seasons = {
 }
 
 st.markdown(_("*Enter Soil and Climate Data for ML Prediction*"))
-
 n = st.number_input(_("Nitrogen (N)"), min_value=0.0)
 p = st.number_input(_("Phosphorus (P)"), min_value=0.0)
 k = st.number_input(_("Potassium (K)"), min_value=0.0)
@@ -112,5 +121,6 @@ if st.button(_("Predict Best Crop")):
     prediction = model.predict(input_data)
     predicted_crop = prediction[0]
     season = crop_seasons.get(predicted_crop, "Unknown")
-    st.success(f"🌱 {_('Predicted Crop')}: **{_(predicted_crop)}** ({_(season)} {_('season')})")
+    st.success(f"🌱 { _('Predicted Crop') }: **{predicted_crop}** ({ _(season) } {_('season')})")
+
 
