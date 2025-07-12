@@ -75,7 +75,7 @@ try:
         selected_season_display = st.selectbox(_("🗓 Select Season"), season_display)
         selected_season = seasons[season_display.index(selected_season_display)]
 
-    st.markdown(f"<h4 style='color:#2E8B57;'>📍 {_('Selected Region')}: <b>{selected_district}, {selected_state}</b> | {_('Season')}: <b>{selected_season}</b></h4>", unsafe_allow_html=True)
+    st.markdown(f"<h4 style='color:#2E8B57;'>📍 {('Selected Region')}: <b>{selected_district}, {selected_state}</b> | {('Season')}: <b>{selected_season}</b></h4>", unsafe_allow_html=True)
 except FileNotFoundError:
     st.warning(_("⚠ Please upload crop_production.csv."))
 
@@ -181,11 +181,8 @@ try:
         if recommended:
             st.success(_("✅ Top Recommended Crops Grown in Your District:"))
             for crop, score in recommended:
-                 st.write(f"🌿 **{_(crop)}** — {_('Confidence')}: {score:.2f}")
+                 st.write(f"🌿 *{_(crop)}* — {_('Confidence')}")
         else:
             st.warning(_("❌ No matching crops from prediction found in this district."))
 except FileNotFoundError:
     st.warning(_("⚠ Please upload data_core.csv."))
-
-
-
