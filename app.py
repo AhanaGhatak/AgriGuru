@@ -52,37 +52,15 @@ st.markdown("<hr style='border: 2px solid #228B22;'>", unsafe_allow_html=True)
 def load_production_data():
     return pd.read_csv("crop_production.csv")
 
-# Hardcoded most common crops for 29 Indian states
-most_common_crops = {
-    "Andhra Pradesh": "Rice",
-    "Arunachal Pradesh": "Maize",
-    "Assam": "Rice",
-    "Bihar": "Wheat",
-    "Chhattisgarh": "Rice",
-    "Goa": "Rice",
-    "Gujarat": "Cotton",
-    "Haryana": "Wheat",
-    "Himachal Pradesh": "Maize",
-    "Jharkhand": "Rice",
-    "Karnataka": "Ragi",
-    "Kerala": "Paddy",
-    "Madhya Pradesh": "Wheat",
-    "Maharashtra": "Jowar",
-    "Manipur": "Rice",
-    "Meghalaya": "Maize",
-    "Mizoram": "Rice",
-    "Nagaland": "Rice",
-    "Odisha": "Rice",
-    "Punjab": "Wheat",
-    "Rajasthan": "Bajra",
-    "Sikkim": "Maize",
-    "Tamil Nadu": "Paddy",
-    "Telangana": "Rice",
-    "Tripura": "Rice",
-    "Uttar Pradesh": "Wheat",
-    "Uttarakhand": "Wheat",
-    "West Bengal": "Rice",
-    "Delhi": "Wheat"
+# Hardcoded most common crop by state
+most_common_crop = {
+    'Andhra Pradesh': 'Rice', 'Arunachal Pradesh': 'Maize', 'Assam': 'Rice', 'Bihar': 'Wheat',
+    'Chhattisgarh': 'Rice', 'Goa': 'Coconut', 'Gujarat': 'Cotton', 'Haryana': 'Wheat',
+    'Himachal Pradesh': 'Apple', 'Jharkhand': 'Rice', 'Karnataka': 'Ragi', 'Kerala': 'Coconut',
+    'Madhya Pradesh': 'Wheat', 'Maharashtra': 'Sugarcane', 'Manipur': 'Rice', 'Meghalaya': 'Potato',
+    'Mizoram': 'Rice', 'Nagaland': 'Maize', 'Odisha': 'Rice', 'Punjab': 'Wheat', 'Rajasthan': 'Pearl Millet',
+    'Sikkim': 'Maize', 'Tamil Nadu': 'Rice', 'Telangana': 'Maize', 'Tripura': 'Rice',
+    'Uttar Pradesh': 'Wheat', 'Uttarakhand': 'Wheat', 'West Bengal': 'Rice', 'Delhi': 'Wheat'
 }
 
 try:
@@ -135,28 +113,6 @@ if 'selected_district' in locals():
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
-st.markdown(f"### 🧱 { _('Explore Suitable Crops by Soil Type') }")
-
-soil_crop_map = {
-    "Alluvial": ["Rice", "Sugarcane", "Wheat", "Jute"],
-    "Black": ["Cotton", "Soybean", "Sorghum"],
-    "Red": ["Millets", "Groundnut", "Potato"],
-    "Laterite": ["Cashew", "Tea", "Tapioca"],
-    "Sandy": ["Melons", "Pulses", "Groundnut"],
-    "Clayey": ["Rice", "Wheat", "Lentil"],
-    "Loamy": ["Maize", "Barley", "Sugarcane"]
-}
-
-soil_display_map = {_(s): s for s in soil_crop_map}
-soil_cols = st.columns(3)
-for i, translated_soil in enumerate(soil_display_map):
-    with soil_cols[i % 3]:
-        if st.button(translated_soil, key=f"soil_{translated_soil}"):
-            crops = [_(c) for c in soil_crop_map[soil_display_map[translated_soil]]]
-            st.success("🌾 " + _(f"Suitable Crops: {', '.join(crops)}"))
-
-st.markdown("<hr>", unsafe_allow_html=True)
-
 st.markdown(f"### 📊 { _('Enter Soil and Climate Data (for ML Prediction)') }")
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -168,8 +124,6 @@ with col2:
 with col3:
     humidity = st.number_input(_("Humidity (%)"), min_value=0.0, key="humidity")
     moisture = st.number_input(_("Moisture (%)"), min_value=0.0, key="moisture")
-
-st.markdown(f"### 🌿 { _('ML-Powered Crop Recommendation (Filtered by District)') }")
 
 @st.cache_data
 def load_soil_dataset():
@@ -212,22 +166,23 @@ try:
 
         price_map = price_df.dropna().drop_duplicates("Crop Type").set_index("Crop Type")["Clean Price"].to_dict()
 
-        most_common_crop = most_common_crops.get(selected_state, None)
-        recommended = [(crop, crop_scores.get(crop, 0), price_map.get(crop, 0))
+        recommended = [(crop, crop_scores[crop], price_map[crop])
                        for crop in district_crops
                        if crop in crop_scores and crop in price_map and price_map[crop] <= budget]
 
-        if most_common_crop and most_common_crop not in [c[0] for c in recommended]:
-            if most_common_crop in crop_scores and most_common_crop in price_map:
-                recommended = [(most_common_crop, crop_scores[most_common_crop], price_map[most_common_crop])] + recommended
+        # Add most common crop even if over budget
+        if selected_state in most_common_crop:
+            common_crop = most_common_crop[selected_state]
+            if common_crop in crop_scores and common_crop in price_map:
+                if common_crop not in [c[0] for c in recommended]:
+                    recommended.insert(0, (common_crop, crop_scores[common_crop], price_map[common_crop]))
 
         recommended = sorted(recommended, key=lambda x: x[1], reverse=True)[:5]
 
         if recommended:
-            st.success(_("✅ Top Recommended Crops (Most Common First):"))
+            st.success(_("✅ Top Recommended Crops (Priority to Common Crop):"))
             for crop, score, price in recommended:
-                prefix = "🌟 " if crop == most_common_crop else "🌿"
-                st.write(f"{prefix} {_(crop)} — ₹{price:.0f}/tonne")
+                st.write(f"🌿 {_(crop)} — ₹{price:.0f}/tonne")
         else:
             st.warning(_("❌ No crops found within your budget."))
 except FileNotFoundError:
