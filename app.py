@@ -25,11 +25,13 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# Sidebar: Language selection
 st.sidebar.image("https://cdn-icons-png.flaticon.com/512/606/606807.png", width=80)
-st.sidebar.title("\U0001F310 Language Settings")
+st.sidebar.title("🌐 Language Settings")
 selected_lang = st.sidebar.selectbox("Select Language", list(languages.keys()))
 target_lang = languages[selected_lang]
 
+# Translation with caching
 translator_cache = {}
 def _(text):
     if target_lang == "en":
@@ -43,7 +45,7 @@ def _(text):
     except:
         return text
 
-st.markdown(f"<h1 style='text-align: center; color: #006400;'>{_('\U0001F33E AgriGuru Lite – Smart Farming Assistant')}</h1>", unsafe_allow_html=True)
+st.markdown(f"<h1 style='text-align: center; color: #006400;'>{_('🌾 AgriGuru Lite – Smart Farming Assistant')}</h1>", unsafe_allow_html=True)
 st.markdown("<hr style='border: 2px solid #228B22;'>", unsafe_allow_html=True)
 
 @st.cache_data
@@ -52,34 +54,30 @@ def load_production_data():
 
 try:
     prod_df = load_production_data()
-
-    # Calculate most common crop per state
-    most_common_crops = prod_df.groupby("State_Name")["Crop"].agg(lambda x: x.value_counts().idxmax())
-
     col1, col2, col3 = st.columns(3)
     with col1:
         states = sorted(prod_df["State_Name"].dropna().unique())
         state_display = [_(s) for s in states]
-        selected_state_display = st.selectbox(_("\U0001F30D Select State"), state_display)
+        selected_state_display = st.selectbox(_("🌍 Select State"), state_display)
         selected_state = states[state_display.index(selected_state_display)]
 
     with col2:
         districts = sorted(prod_df[prod_df["State_Name"] == selected_state]["District_Name"].dropna().unique())
         district_display = [_(d) for d in districts]
-        selected_district_display = st.selectbox(_("\U0001F3DD Select District"), district_display)
+        selected_district_display = st.selectbox(_("🏜 Select District"), district_display)
         selected_district = districts[district_display.index(selected_district_display)]
 
     with col3:
         seasons = sorted(prod_df["Season"].dropna().unique())
         season_display = [_(s) for s in seasons]
-        selected_season_display = st.selectbox(_("\U0001F4C5 Select Season"), season_display)
+        selected_season_display = st.selectbox(_("🗓 Select Season"), season_display)
         selected_season = seasons[season_display.index(selected_season_display)]
 
-    st.markdown(f"<h4 style='color:#2E8B57;'>\U0001F4CD Selected Region: <b>{selected_district}, {selected_state}</b> | Season: <b>{selected_season}</b></h4>", unsafe_allow_html=True)
+    st.markdown(f"<h4 style='color:#2E8B57;'>📍 {('Selected Region')}: <b>{selected_district}, {selected_state}</b> | {('Season')}: <b>{selected_season}</b></h4>", unsafe_allow_html=True)
 except FileNotFoundError:
-    st.warning(_("\u26A0 Please upload crop_production.csv."))
+    st.warning(_("⚠ Please upload crop_production.csv."))
 
-st.markdown("### \u26C5 " + _("Weather Forecast"))
+st.markdown("### ⛅ " + _("Weather Forecast"))
 weather_api_key = "0a16832edf4445ce698396f2fa890ddd"
 
 def get_weather(city):
@@ -98,13 +96,14 @@ if 'selected_district' in locals():
     forecast = get_weather(district_en)
     if forecast:
         for day in forecast:
-            st.info(f"\U0001F5D5 {day['dt_txt']} | \U0001F321 {day['main']['temp']} °C | \u2601 {_(day['weather'][0]['description'])}")
+            st.info(f"🗕 {day['dt_txt']} | 🌡 {day['main']['temp']} °C | ☁ {_(day['weather'][0]['description'])}")
     else:
-        st.warning(_("\u26A0 Weather unavailable. Try a nearby city."))
+        st.warning(_("⚠ Weather unavailable. Try a nearby city."))
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
-st.markdown(f"### \U0001F9F1 { _('Explore Suitable Crops by Soil Type') }")
+st.markdown(f"### 🧱 { _('Explore Suitable Crops by Soil Type') }")
+
 soil_crop_map = {
     "Alluvial": ["Rice", "Sugarcane", "Wheat", "Jute"],
     "Black": ["Cotton", "Soybean", "Sorghum"],
@@ -114,17 +113,18 @@ soil_crop_map = {
     "Clayey": ["Rice", "Wheat", "Lentil"],
     "Loamy": ["Maize", "Barley", "Sugarcane"]
 }
+
 soil_display_map = {_(s): s for s in soil_crop_map}
 soil_cols = st.columns(3)
 for i, translated_soil in enumerate(soil_display_map):
     with soil_cols[i % 3]:
         if st.button(translated_soil, key=f"soil_{translated_soil}"):
             crops = [_(c) for c in soil_crop_map[soil_display_map[translated_soil]]]
-            st.success("\U0001F33E " + _(f"Suitable Crops: {', '.join(crops)}"))
+            st.success("🌾 " + _(f"Suitable Crops: {', '.join(crops)}"))
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
-st.markdown(f"### \U0001F4CA { _('Enter Soil and Climate Data (for ML Prediction)') }")
+st.markdown(f"### 📊 { _('Enter Soil and Climate Data (for ML Prediction)') }")
 col1, col2, col3 = st.columns(3)
 with col1:
     n = st.number_input(_("Nitrogen"), min_value=0.0, key="n")
@@ -136,7 +136,7 @@ with col3:
     humidity = st.number_input(_("Humidity (%)"), min_value=0.0, key="humidity")
     moisture = st.number_input(_("Moisture (%)"), min_value=0.0, key="moisture")
 
-st.markdown(f"### \U0001F33F { _('ML-Powered Crop Recommendation (Filtered by District)') }")
+st.markdown(f"### 🌿 { _('ML-Powered Crop Recommendation (Filtered by District)') }")
 
 @st.cache_data
 def load_soil_dataset():
@@ -153,12 +153,12 @@ def load_soil_dataset():
 try:
     soil_model, soil_encoder, soil_df = load_soil_dataset()
     soil_display = [_(s) for s in soil_df["Soil Type"].unique()]
-    selected_soil_display = st.selectbox(_("\U0001F9EA Select Soil Type for ML"), soil_display)
+    selected_soil_display = st.selectbox(_("🧪 Select Soil Type for ML"), soil_display)
     selected_soil = soil_df["Soil Type"].unique()[soil_display.index(selected_soil_display)]
 
-    budget = st.number_input(_("\U0001F4B0 Enter Your Budget (INR/tonne)"), min_value=0.0)
+    budget = st.number_input(_("💰 Enter Your Budget (INR/tonne)"), min_value=0.0)
 
-    if st.button(_("\U0001F331 Predict Best Crops in District")):
+    if st.button(_("🌱 Predict Best Crops in District")):
         encoded_soil = soil_encoder.transform([selected_soil])[0]
         input_data = [[n, p, k, temp, humidity, moisture, encoded_soil]]
 
@@ -183,20 +183,20 @@ try:
                        for crop in district_crops
                        if crop in crop_scores and crop in price_map and price_map[crop] <= budget]
 
-        # Always include most common crop
-        state_common_crop = most_common_crops.get(selected_state)
-        if state_common_crop and state_common_crop in crop_scores and state_common_crop in price_map:
-            state_crop_entry = (state_common_crop, crop_scores[state_common_crop], price_map[state_common_crop])
-            recommended = [entry for entry in recommended if entry[0] != state_common_crop]
-            recommended = [state_crop_entry] + recommended
+        # Always include most common crop from state
+        state_crops = prod_df[prod_df["State_Name"] == selected_state]["Crop"]
+        most_common_crop = state_crops.mode()[0] if not state_crops.empty else None
+        if most_common_crop and most_common_crop in crop_scores and most_common_crop in price_map:
+            recommended.append((most_common_crop, crop_scores[most_common_crop], price_map[most_common_crop]))
 
+        recommended = list({r[0]: r for r in recommended}.values())  # remove duplicates
         recommended = sorted(recommended, key=lambda x: x[1], reverse=True)[:5]
 
         if recommended:
-            st.success(_("\u2705 Top Recommended Crops Within Your Budget (or Region):"))
+            st.success(_("✅ Top Recommended Crops:"))
             for crop, score, price in recommended:
-                st.write(f"\U0001F33F {_(crop)} — ₹{price:.0f}/tonne")
+                st.write(f"🌿 {_(crop)} — ₹{price:.0f}/tonne")
         else:
-            st.warning(_("\u274C No crops found within your budget."))
+            st.warning(_("❌ No crops found within your budget."))
 except FileNotFoundError:
-    st.warning(_("\u26A0 Please upload data_core.csv."))
+    st.warning(_("⚠ Please upload data_core.csv."))
