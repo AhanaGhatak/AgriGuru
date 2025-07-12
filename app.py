@@ -52,8 +52,23 @@ st.markdown("<hr style='border: 2px solid #228B22;'>", unsafe_allow_html=True)
 def load_production_data():
     return pd.read_csv("crop_production.csv")
 
+@st.cache_data
+def get_state_common_crop():
+    df = pd.read_csv("crop_production.csv")
+    df = df.dropna(subset=["State_Name", "Crop"])
+    common_crop_df = (
+        df.groupby(["State_Name", "Crop"])
+        .size()
+        .reset_index(name='Count')
+        .sort_values(['State_Name', 'Count'], ascending=[True, False])
+        .groupby("State_Name").first().reset_index()
+    )
+    return dict(zip(common_crop_df["State_Name"], common_crop_df["Crop"]))
+
 try:
     prod_df = load_production_data()
+    common_crop_map = get_state_common_crop()
+    
     col1, col2, col3 = st.columns(3)
     with col1:
         states = sorted(prod_df["State_Name"].dropna().unique())
@@ -77,6 +92,7 @@ try:
 except FileNotFoundError:
     st.warning(_("⚠ Please upload crop_production.csv."))
 
+# Weather API
 st.markdown("### ⛅ " + _("Weather Forecast"))
 weather_api_key = "0a16832edf4445ce698396f2fa890ddd"
 
@@ -102,8 +118,8 @@ if 'selected_district' in locals():
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
+# Soil Crop Mapping
 st.markdown(f"### 🧱 { _('Explore Suitable Crops by Soil Type') }")
-
 soil_crop_map = {
     "Alluvial": ["Rice", "Sugarcane", "Wheat", "Jute"],
     "Black": ["Cotton", "Soybean", "Sorghum"],
@@ -124,6 +140,7 @@ for i, translated_soil in enumerate(soil_display_map):
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
+# ML Input
 st.markdown(f"### 📊 { _('Enter Soil and Climate Data (for ML Prediction)') }")
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -176,12 +193,18 @@ try:
             r',': '', r'[^0-9.]': '', r'-+': ''
         }, regex=True).astype(str)
         price_df["Clean Price"] = pd.to_numeric(price_df["Clean Price"], errors='coerce')
-
         price_map = price_df.dropna().drop_duplicates("Crop Type").set_index("Crop Type")["Clean Price"].to_dict()
 
         recommended = [(crop, crop_scores[crop], price_map[crop])
                        for crop in district_crops
                        if crop in crop_scores and crop in price_map and price_map[crop] <= budget]
+
+        # Ensure state common crop appears first
+        state_common_crop = common_crop_map.get(selected_state, None)
+        if state_common_crop and state_common_crop in crop_scores and state_common_crop in price_map:
+            if price_map[state_common_crop] <= budget:
+                rest = [(crop, score, price) for crop, score, price in recommended if crop != state_common_crop]
+                recommended = [(state_common_crop, crop_scores[state_common_crop], price_map[state_common_crop])] + rest
 
         recommended = sorted(recommended, key=lambda x: x[1], reverse=True)[:5]
 
